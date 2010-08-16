@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   width="{appModel.SPIKEWIDTH}" 
+			   height="{appModel.SPIKEHEIGHT + 50}" 
+			   xmlns:encoder="org.juicekit.encoder.*" 
+			   xmlns:renderers="spike.renderers.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			import org.juicekit.animate.TransitionEvent;
+			import org.juicekit.animate.Transitioner;
+			import org.juicekit.util.Property;
+			import org.juicekit.util.Sort;
+			import org.juicekit.util.Stats;
+			import org.juicekit.util.Strings;
+			
+			import spike.models.Hospital;
+			import spike.models.HospitalGroup;
+			import spike.models.IHospital;
+			import spike.models.SpikeAppModel;
+			import spike.renderers.HospitalGroupRenderer;
+			import spike.renderers.HospitalRenderer;
+			
+			[Bindable]
+			private var appModel:SpikeAppModel = SpikeAppModel.instance;
+			
+			[Bindable]
+			private var outliers:HospitalGroup = new HospitalGroup();
+			
+			[Bindable]
+			public var spikeTitle:String = 'Unknown Group';
+			
+			/**
+			 * Hospitals only
+			 */
+			private var hospitals:ArrayCollection = new ArrayCollection();
+			
+			[Bindable]
+			private var ac:ArrayCollection = new ArrayCollection();
+
+			
+			public function set dataProvider(dataProvider:ArrayCollection):void {
+				if (ac && ac.length) { 
+					for each (var h:IHospital in ac) {
+						spikeGroup.removeElement(h.itemRenderer);
+					}
+				}
+				this.ac = dataProvider;	
+				this.hospitals.removeAll();
+				
+				for each (var h:IHospital in ac) {
+					if (h is Hospital) {
+						hospitals.addItem(h);
+					}
+
+					if (h.itemRenderer == null) {
+						h.itemRenderer = new HospitalRenderer();
+						(h.itemRenderer as HospitalRenderer).data = h;
+						spikeGroup.addElement(h.itemRenderer);		
+					}					
+				}
+				update();
+			}
+			
+			
+			/**
+			 * Under which conditions should hospitals be joined
+			 */
+			public var joinHospitals:Function = appModel.joinHospitals;
+			
+			
+			/**
+			 * Calculate and return the stats on hospital scores
+			 */
+			public function scoreStats():Stats {
+				return new Stats(hospitals.source, 'score');				
+			}
+			
+			/**
+			 * Calculate and return the stats on hospital relative scores
+			 */
+			public function relativeScoreStats():Stats {
+				calcRelativeScores();				
+				return new Stats(hospitals.source, 'relativeScore');				
+			}
+
+			
+			/**
+			 * A percentile to use for relative scores
+			 */
+			public var percentile:Number = 0.5;
+
+			/**
+			 * Calculate relative scores for all hospitals relative to a median value
+			 */
+			public function calcRelativeScores():void {
+				var medianScore:Number = scoreStats().getPercentile(percentile);
+				for each (var h:Hospital in hospitals) {
+					h.relativeScore = h.score - medianScore;
+				}
+			}
+			
+			/**
+			 * Is the spike pointing down?
+			 */
+			[Bindable]
+			public var down:Boolean = true;
+			
+
+			public function update(t:Transitioner=null):Transitioner {				
+				// Calculate the encoder details
+				var stats:Stats = scoreStats();
+				
+				positionEncoder.source = appModel.positionEncoder.source;
+				if (positionEncoder.source == 'relativeScore') calcRelativeScores();
+				// Scale determines the minumum and maximum score values that will get displayed
+				positionEncoder.scaleMin = appModel.positionEncoder.scaleMin;
+				positionEncoder.scaleMax = appModel.positionEncoder.scaleMax;
+				// Palette values determine the y
+				positionEncoder.paletteMin = appModel.positionEncoder.paletteMin;
+				positionEncoder.paletteMax = appModel.positionEncoder.paletteMax;
+				
+				var scorePoints:Number = Math.abs(Number(appModel.positionEncoder.scaleMax) - Number(appModel.positionEncoder.scaleMin));
+				var pixels:Number = Math.abs(appModel.positionEncoder.paletteMax - appModel.positionEncoder.paletteMin);
+				var scoreProp:Property = new Property(appModel.positionEncoder.source);
+				var pixelsPerScorePoint:Number = pixels / scorePoints;
+
+				this.joinHospitals = function(a:IHospital, b:IHospital):Boolean {
+					return Math.abs(scoreProp.getValue(a) - scoreProp.getValue(b)) < (8 / pixelsPerScorePoint);
+				};
+				
+
+				if (t == null) {
+					t = new Transitioner(NaN);
+				}
+				
+				// Remove any hospital groups that have been added
+				// removed groups are first made alpha=0 
+				// then removed on the next update
+				for (var i:int=(ac.length - 1); i>=0; i--) {
+					var h:IHospital = ac[i];
+					if (h is HospitalGroup) {
+						if (h.itemRenderer.alpha < 0.01) {
+							ac.removeItemAt(i);
+							try {
+								spikeGroup.removeElement(h.itemRenderer);
+							} catch (e:Error) {								
+							}
+						} else {
+							h.itemRenderer.depth = -15;
+							t.setValue(h.itemRenderer, 'alpha', 0);
+						}
+					}  
+				}
+				
+				Sort.sortArrayCollectionBy(ac, ['score']);
+				
+				// Find the outliers
+				// Only check Hospitals
+				outliers = new HospitalGroup();
+				var scoreProp:Property = new Property(positionEncoder.source);
+				for (var i:int=0; i<(ac.length); i++) {
+					var h:IHospital = ac[i];
+					if (h is Hospital) {
+						// If the item is an outlier
+						// place these items lower in the visual heirarchy and transition them out
+						if ((down && (scoreProp.getValue(h) > positionEncoder.scaleMax)) ||
+							(!down && (scoreProp.getValue(h) < positionEncoder.scaleMin))) {
+							outliers.hospitals.addItem(h);
+							h.itemRenderer.depth = -10;
+							t.setValue(h.itemRenderer, 'alpha', 0.0);
+						} else {
+							h.itemRenderer.depth = 0;
+							t.setValue(h.itemRenderer, 'alpha', 1.0);
+						}
+					}
+				}
+				outliers.sortHospitals();
+				
+				
+				// Hospitals for grouping
+				var hospitalsToGroup:Array = [];
+				for each (var h:IHospital in ac) {
+					if (h is Hospital && !outliers.hospitals.contains(h)) {
+						hospitalsToGroup.push(h);
+					}
+				}
+				
+				// Iterate through all hospitals finding hospitals that are too close together
+				var groups:Array = [];
+				var grp:HospitalGroup;
+				for (var i:int=0; i<(hospitalsToGroup.length-1); i++) {
+					var cur:IHospital = grp == null ? hospitalsToGroup[i] : grp;
+					var next:IHospital = hospitalsToGroup[i+1];
+					
+					if (joinHospitals(cur, next)) {
+						if (grp == null) {
+							grp = new HospitalGroup();
+							grp.itemRenderer = new HospitalGroupRenderer();
+							grp.itemRenderer.alpha = 0;
+							(grp.itemRenderer as HospitalGroupRenderer).data = grp;
+							t.setValue(grp.itemRenderer, 'alpha', 1);
+							spikeGroup.addElement(grp.itemRenderer);		
+							
+							grp.hospitals.addItem(cur);
+							grp.hospitals.addItem(next);
+							cur.itemRenderer.depth = -10;							
+							next.itemRenderer.depth = -10;							
+							t.setValue(cur.itemRenderer, 'alpha', 0.0);
+							t.setValue(next.itemRenderer, 'alpha', 0.0);
+						} else {
+							grp.hospitals.addItem(next);
+							next.itemRenderer.depth = -10;
+							t.setValue(next.itemRenderer, 'alpha', 0.0);
+						}
+					} else {
+						cur.itemRenderer.depth = 0;
+						next.itemRenderer.depth = 0;
+						t.setValue(cur.itemRenderer, 'alpha', 1);
+						t.setValue(next.itemRenderer, 'alpha', 1);
+						if (grp) { 
+							groups.push(grp);
+						}
+						grp = null;
+					}
+				}
+				
+				// Add the groups
+				//
+				// add the leftover group if it exists
+				if (grp) {
+					ac.addItem(grp);
+					grp.sortHospitals();
+				} 
+				// add all the other created groups
+				for each (grp in groups) {
+					ac.addItem(grp);
+					grp.sortHospitals();
+				}
+				
+				// Calculate all positions
+				positionEncoder.operate(t);
+				
+				// Position and color the baseline
+				t.setValue(baseline, 'top', down ? -11 : (10 + spikeGroup.height) );
+				t.setValue(baselineColor, 'color', down ? appModel.BASELINE_DOWN_COLOR : appModel.BASELINE_UP_COLOR);
+				t.setValue(outliersGroup, 'y', down ? -23 : appModel.SPIKEHEIGHT + 25);
+				t.setValue(titleLabel, 'y', down ? -50 : appModel.SPIKEHEIGHT + 40);
+				t.setValue(outer, 'top', down ? 50 : 0);
+
+				// Update the spike as elements transition
+				var updateSpike:Function = function(e:Event=null):void {
+					var s:Stats = new Stats(ac.source, 'itemRenderer.y');
+					var mx:Number = s.maximum;
+					var mn:Number = s.minimum;
+					if (down) {
+						mn = positionEncoder.paletteMax - 10
+					} else {
+						mx = positionEncoder.paletteMin + 10;
+					}
+					vert.height = mx-mn;
+					vert.y = mn;
+				}
+				if (t.duration > 0) {
+					t.addEventListener(TransitionEvent.STEP, updateSpike, false, 0, true);
+					t.addEventListener(TransitionEvent.END, updateSpike, false, 0, true);					
+				} else {
+					updateSpike();
+				}
+				return t;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<encoder:SizeEncoder id="positionEncoder" source="score" target="itemRenderer.y" dataProvider="{ac}" scaleMin="0" scaleMax="100" paletteMin="0" paletteMax="300"/>
+	</fx:Declarations>
+	
+	<s:Group id="outer" top="50" left="0" height="{appModel.SPIKEHEIGHT}" width="{appModel.SPIKEWIDTH}">
+		<s:Label id="titleLabel" text="{spikeTitle}" fontSize="14" width="{appModel.SPIKEWIDTH}"/>
+		<renderers:HospitalGroupRenderer id="outliersGroup" data="{outliers}" visible="{outliers.hospitals.length > 0}" y="{appModel.SPIKEHEIGHT+25}" left="0"/>
+		<s:Group id="spikeGroup" height="{appModel.SPIKEHEIGHT}" width="{appModel.SPIKEWIDTH}">
+
+			<!--
+			The horizontal baseline
+			This is positioned and colored by the transitioner during operate
+			-->
+			<s:Rect width="100%" height="{appModel.BASELINE_THICKNESS}" id="baseline">
+				<s:fill>
+					<s:SolidColor id="baselineColor" color="#ffffff"/>
+				</s:fill>
+			</s:Rect>
+			
+			<!--
+			The vertical line. This is positioned and sized by the transitioner during operate
+			-->
+			<s:Rect x="6.5" width="0.5" height="0" id="vert">
+				<s:fill>
+					<s:SolidColor color="#666666"/>
+				</s:fill>
+			</s:Rect>
+			
+		</s:Group>
+	</s:Group>
+</s:Group>

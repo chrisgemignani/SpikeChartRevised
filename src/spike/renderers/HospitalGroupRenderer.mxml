@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+				xmlns:s="library://ns.adobe.com/flex/spark"
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				depth="1" 
+				depth.hovered="2"
+				includeInLayout="{alpha>0.1}"
+				autoDrawBackground="false">
+	
+	<fx:Script>
+		<![CDATA[
+			import flash.filters.GlowFilter;
+			
+			import spike.models.Hospital;
+			import spike.models.HospitalGroup;
+			import spike.models.SpikeAppModel;
+			
+			import mx.events.CollectionEvent;
+			
+			import org.juicekit.util.Strings;
+			
+			protected const SIZE:Number = 14;
+			
+			[Bindable] public var appModel:SpikeAppModel = SpikeAppModel.instance;
+			
+			/** Hospital data object */
+			[Bindable] private var hospitalGroup:HospitalGroup = new HospitalGroup();
+			[Bindable] private var hospitalName:String;
+			/** Hospital name in lower case, used for search */
+			private var hospitalNameLowerCase:String = '';
+			/** is this the selected hospital based on appModel.selectedHospitalName */
+			[Bindable] protected var isSelected:Boolean = false;
+			/** is this the hovered hospital based on appModel.hoverHospitalName */
+			[Bindable] protected var isHovered:Boolean = false;
+			/** does this hospital match the search term */
+			[Bindable] protected var searchMatch:Boolean = false;
+			/** primary color to use */
+			[Bindable] protected var clr:uint = 0x666666;
+			/** primary color to use as an IFill */
+			[Bindable] protected var clrFill:SolidColor = new SolidColor(0x666666, 1);
+			
+			override public function set data(v:Object):void {
+				hospitalGroup = v as HospitalGroup;
+				hospitalNameLowerCase = hospitalGroup.hospitalName.toLowerCase();
+				hospitalName = hospitalGroup.toString();
+				hospitalGroup.hospitals.addEventListener(CollectionEvent.COLLECTION_CHANGE, function():void {
+					hospitalName = hospitalGroup.toString();
+				}, false, 0, true);
+				// calculate initial coloring
+				getColor(appModel.selectedHospitalName, appModel.hoverHospitalName, appModel.searchHospitalName);
+				super.data = v;
+			}
+			
+			/**
+			 * Calculate colors based on appModel
+			 */
+			protected function getColor(selectedHospitalName:String, hoveredHospitalName:String, searchHospitalName:String):uint {
+				searchMatch = false;
+				if (searchHospitalName && hospitalGroup && hospitalGroup.hospitalsMatch(searchHospitalName)) {
+					searchMatch = true;
+				}
+				
+				clr = normalColor.color;
+				if (hospitalGroup) {
+					if (hospitalGroup.hospitalsContain(selectedHospitalName)) {
+						isSelected = true;
+						isHovered = false;
+						clr = selectedColor.color;
+					} else if (hospitalGroup.hospitalsContain(hoveredHospitalName)) {
+						isSelected = false;
+						isHovered = true;
+						clr = hoveredColor.color;					
+					} else {
+						isSelected = false;
+						isHovered = false;
+					}
+				}
+				clrFill.color = clr;
+				hospitalName = hospitalGroup.toString();
+				return clr;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>		
+		<s:SolidColor id="normalColor" color="{appModel.NORMAL_TEXT_COLOR}"/>
+		<s:SolidColor id="selectedColor" color="{appModel.SELECTED_TEXT_COLOR}"/>
+		<s:SolidColor id="hoveredColor" color="{appModel.HOVERED_TEXT_COLOR}"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="hovered"/>
+	</s:states>
+	
+	
+	<s:Group id="grp" top="{-SIZE/2}">
+		<!-- Circle with number -->
+		<s:Group id="innerGrp" width="{SIZE}" height="{SIZE}" top="{0}" filters="{searchMatch ? [new GlowFilter(0xffcc00, 0.5, 4, 4, 4, 6)] : []}">
+			<s:Rect id="r" width="100%" height="100%" radiusX="{isSelected ? 0: 6}" fill="{clrFill}"/>
+			<s:Label width="14" 
+					 textAlign="center" 
+					 fontSize="9" 
+					 paddingTop="3" 
+					 color="white" 
+					 id="num" 
+					 styleName="jkNotes" 
+					 text="{hospitalGroup.hospitals.length}"/>			
+		</s:Group>
+		
+		<s:Label left="16" 
+				 maxWidth="180" 
+				 maxDisplayedLines="1" 
+				 paddingTop="2" 
+				 includeIn="normal" 
+				 id="lbl" 
+				 styleName="jkNotes" 
+				 filters="{searchMatch ? [new GlowFilter(0xffcc00, 0.5, 4, 4, 4, 6)] : []}"
+				 text="{hospitalName}" 
+				 color="{getColor(appModel.selectedHospitalName, appModel.hoverHospitalName, appModel.searchHospitalName)}"
+				 />
+		<s:SkinnableDataContainer top="0" width="200" minHeight="10" scaleX="0.85" scaleY="0.85" id="hospitals" includeIn="hovered" dataProvider="{hospitalGroup.hospitals}" itemRenderer="spike.renderers.IndividualHospitalRenderer" >
+			<s:layout>
+				<s:VerticalLayout gap="0"/>
+			</s:layout>		
+		</s:SkinnableDataContainer>
+	</s:Group>
+	
+</s:ItemRenderer>

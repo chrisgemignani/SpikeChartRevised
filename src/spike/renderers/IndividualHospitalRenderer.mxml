@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"  
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				click="itemrenderer1_clickHandler(event)" 
+				rollOver="itemrenderer1_rollOverHandler(event)" 
+				rollOut="itemrenderer1_rollOutHandler(event)"
+				depth="0"
+				depth.hovered="1"
+				includeInLayout="{alpha>0.1}"
+				autoDrawBackground="false">
+	
+	<fx:Script>
+		<![CDATA[
+			import spike.models.Hospital;
+			import spike.models.SpikeAppModel;
+			import flash.filters.GlowFilter;
+			
+			import org.juicekit.util.Strings;
+			
+			protected const SIZE:Number = 8;
+			
+			[Bindable] public var appModel:SpikeAppModel = SpikeAppModel.instance;
+			
+			/** Hospital data object */
+			[Bindable] private var hospital:Hospital = new Hospital('###Unknown###', 0, 0);
+			/** Hospital name in lower case, used for search */
+			private var hospitalNameLowerCase:String = '';
+			/** is this the selected hospital based on appModel.selectedHospitalName */
+			[Bindable] protected var isSelected:Boolean = false;
+			/** is this the hovered hospital based on appModel.hoverHospitalName */
+			[Bindable] protected var isHovered:Boolean = false;
+			/** does this hospital match the search term */
+			[Bindable] protected var searchMatch:Boolean = false;
+			/** primary color to use */
+			[Bindable] protected var clr:uint = 0x666666;
+			/** primary color to use as an IFill */
+			[Bindable] protected var clrFill:SolidColor = new SolidColor(0x666666, 1);
+			
+			override public function set data(v:Object):void {
+				hospital = v as Hospital;
+				hospitalNameLowerCase = hospital.hospitalName.toLowerCase();
+				
+				// calculate initial coloring
+				getColor(appModel.selectedHospitalName, appModel.hoverHospitalName, appModel.searchHospitalName);
+				super.data = v;
+			}
+			
+			protected function itemrenderer1_clickHandler(event:MouseEvent):void
+			{
+				appModel.selectedHospitalName = data.hospitalName;
+			}
+			
+			
+			protected function itemrenderer1_rollOverHandler(event:MouseEvent):void
+			{
+				appModel.hoverHospitalName = data.hospitalName;
+			}
+			
+			
+			protected function itemrenderer1_rollOutHandler(event:MouseEvent):void
+			{
+				appModel.hoverHospitalName = '';
+			}
+			
+			/**
+			 * Calculate colors based on appModel
+			 */
+			protected function getColor(selectedHospitalName:String, hoveredHospitalName:String, searchHospitalName:String):uint {
+				searchMatch = false;
+				if (searchHospitalName && hospitalNameLowerCase.indexOf(searchHospitalName.toLowerCase()) != -1) {
+					searchMatch = true;
+				}
+				
+				clr = normalColor.color;
+				if (hospital) {
+					if (hospital.hospitalName == selectedHospitalName) {
+						isSelected = true;
+						isHovered = false;
+						clr = selectedColor.color;
+					} else if (hospital.hospitalName == hoveredHospitalName) {
+						isSelected = false;
+						isHovered = true;
+						clr = hoveredColor.color;					
+					} else {
+						isSelected = false;
+						isHovered = false;
+					}
+				}
+				clrFill.color = clr;
+				return clr;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>		
+		<s:SolidColor id="normalColor" color="{appModel.NORMAL_TEXT_COLOR}"/>
+		<s:SolidColor id="selectedColor" color="{appModel.SELECTED_TEXT_COLOR}"/>
+		<s:SolidColor id="hoveredColor" color="{appModel.HOVERED_TEXT_COLOR}"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="hovered"/>
+	</s:states>
+
+	<!---
+	Background
+	-->
+	<s:Rect height="100%" width="100%">
+		<s:fill>
+			<s:SolidColor color="0xf4f4f4" alpha="0.95"/>
+		</s:fill>
+	</s:Rect>
+	
+	<s:HGroup horizontalAlign="center" gap="2" height="12" width="200">
+		<mx:Spacer width="18"/>
+		
+		<s:Label id="lbl" 
+				 width="155" 
+				 maxDisplayedLines="1" 
+				 styleName="jkNotes" 
+				 text="{data.hospitalName}" 
+				 textAlign="left" 
+				 filters="{searchMatch ? [new GlowFilter(0xffcc00, 0.5, 4, 4, 4, 6)] : []}"
+				 color="{getColor(appModel.selectedHospitalName, appModel.hoverHospitalName, appModel.searchHospitalName)}" 
+				 fontWeight="{isSelected ? 'bold' : 'normal'}"/> 
+		
+		<s:Label id="detail" 
+				 scaleX="0.85" 
+				 scaleY="0.85" 
+				 styleName="jkNotes" 
+				 text="{Strings.format('{0:0.00}',data.score)}" 
+				 color="{clr}" 
+				 visible="{isHovered || isSelected}"/>
+	</s:HGroup>
+	
+</s:ItemRenderer>
+

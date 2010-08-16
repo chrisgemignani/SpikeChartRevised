@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   xmlns:views="spike.views.*" 
+			   xmlns:controls="spike.controls.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import org.juicekit.animate.Transitioner;
+			import org.juicekit.util.Stats;
+			import org.juicekit.util.Strings;
+			
+			import spike.models.Hospital;
+			import spike.models.SpikeAppModel;
+			import spike.views.SpikeView;
+			
+			public var spikeAppModel:SpikeAppModel = SpikeAppModel.instance;
+
+			/** Storage for created spikes */			
+			protected var spikes:Array = [];
+			
+			public var spikeTitles:Array = [];
+			
+			/**
+			 * Should the spikes point down or up
+			 */
+			public var down:Boolean = true;
+			
+			/**
+			 * What should the baseline percentile be for a relative scale
+			 */
+			public var relativeBaselinePercentile:Number = 0.5;
+			
+			/**
+			 * What should the baseline value be for an absolute scale
+			 */
+			public var absoluteBaseline:Number = 50;
+			
+			/**
+			 * Should the scale be relative (to the relativeBaselinePercentile)
+			 * or absolute
+			 */
+			public var relativeScale:Boolean = true;
+			
+			[Bindable] public var lineDescription:String = '';
+			
+			/**
+			 * Generate vertical scale using properties
+			 */
+			protected function generateScale():void {
+				this.spikeAppModel.positionEncoder.source = relativeScale ? 'relativeScore' : 'score';
+				var stats:Array = [];
+				for each (var s:SpikeView in spikes) {
+					s.down = down;
+					s.percentile = relativeBaselinePercentile;
+					stats.push(relativeScale ? s.relativeScoreStats() : s.scoreStats());
+				}
+				
+				if (down) {
+					var globalMin:Number = new Stats(stats, 'minimum').minimum;
+					if (relativeScale) {
+						this.spikeAppModel.positionEncoder.scaleMin = globalMin;
+						this.spikeAppModel.positionEncoder.scaleMax = 0;	
+						lineDescription = Strings.format('Line is {0}th percentile', relativeBaselinePercentile*100);
+					} else {
+						this.spikeAppModel.positionEncoder.scaleMin = globalMin;
+						this.spikeAppModel.positionEncoder.scaleMax = absoluteBaseline;					
+						lineDescription = Strings.format('Line is score of {0}', absoluteBaseline);
+					}
+				} else {
+					var globalMax:Number = new Stats(stats, 'maximum').maximum;
+					if (relativeScale) {
+						this.spikeAppModel.positionEncoder.scaleMin = 0;
+						this.spikeAppModel.positionEncoder.scaleMax = globalMax;					
+						lineDescription = Strings.format('Line is {0}th percentile', relativeBaselinePercentile*100);
+					} else {
+						this.spikeAppModel.positionEncoder.scaleMin = absoluteBaseline;
+						this.spikeAppModel.positionEncoder.scaleMax = globalMax;					
+						lineDescription = Strings.format('Line is score of {0}', absoluteBaseline);
+					}
+				}
+				// Palette values determine the y
+				this.spikeAppModel.positionEncoder.paletteMin = spikeAppModel.SPIKEHEIGHT;
+				this.spikeAppModel.positionEncoder.paletteMax = 0;
+			}
+			
+			
+			/**
+			 * Call this to update the visualization with changed settings
+			 */
+			public function update():void {				
+				var t:Transitioner = new Transitioner(spikeAppModel.TRANSITION_PERIOD);
+				generateScale();
+				for each (var s:SpikeView in spikes) {
+					s.down = down;
+					s.update(t);
+				}
+				t.play();
+			}
+			
+			/**
+			 * Build a spike for each arrayCollection in the input
+			 */
+			public function set dataProvider(ac:ArrayCollection):void {
+				spikes = [];
+				spikeGroup.removeAllElements();
+				
+				var cnt:int = 0;
+				for each (var dp:ArrayCollection in ac) {
+					var s:SpikeView = new SpikeView();
+					if ((cnt-1) < spikeTitles.length) {
+						s.spikeTitle = spikeTitles[cnt];
+					}
+					spikes.push(s);
+					spikeGroup.addElement(s);
+					s.dataProvider = dp;
+					cnt += 1;
+				}
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:HGroup gap="0" id="spikeGroup">
+	</s:HGroup>
+</s:Group>

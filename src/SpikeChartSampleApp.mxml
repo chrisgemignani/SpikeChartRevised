@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="955" minHeight="600" xmlns:views="spike.views.*" xmlns:controls="spike.controls.*"
+			   creationComplete="application1_creationCompleteHandler(event)"
+			   >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			import spike.models.Hospital;
+			private var ac1:ArrayCollection = new ArrayCollection([
+				new Hospital("Arroyo Grande Community Hospital", 63.79909, 0),
+				new Hospital("Bakersfield Memorial Hospital", 63.6892, 0),
+				new Hospital("Chandler Regional Medical Center", 76.19029, 0),
+				new Hospital("Glendale Memorial Hospital and Health Center", 63.537273, 0),
+				new Hospital("Marian Medical Center", 66.764, 0),
+				new Hospital("Mercy General Hospital", 58.15393, 0),
+				new Hospital("Mercy Hospitals Bakersfield", 61.262608, 0),
+				new Hospital("Mercy San Juan Medical Center", 70.427826, 0),
+				new Hospital("Mercy Gilbert Medical Center ", 74.6887, 0),
+				new Hospital("Sequoia Hospital", 69.07588, 0),
+				new Hospital("St. Elizabeth Community Hospital ", 64.28889, 0),
+				new Hospital("Woodland Healthcare", 69.08542, 0),
+				new Hospital("Methodist Hospital", 52, 0),
+				new Hospital("Mercy Medical Center Merced", 63.416668, 0),
+				new Hospital("Northridge Hospital Medical Center", 64.39567, 0),
+				new Hospital("St Mary Medical Center Long Beach", 56.608334, 0),
+				new Hospital("St. John's Regional Medical Center", 50.469566, 0),
+				new Hospital("Mercy Mt. Shasta", 82.926155, 0),
+				new Hospital("St. Mary's Regional Medical Center", 54.765, 0),
+				new Hospital("Oak Valley Hospital", 58.38875, 0),
+				new Hospital("Mercy Hospital Folsom", 66.14571, 0),
+				new Hospital("Community Hospital of San Bernardino", 66.08956, 0),
+				new Hospital("California Hospital Medical Center", 56.59769, 0),
+				new Hospital("Sierra Nevada Memorial Hospital", 66.86857, 0),
+				new Hospital("St. Rose Dominican Hospitals-Rose de Lima ", 67.94867, 0),
+				new Hospital("St. Rose Dominican Hospitals-Siena", 70.8815, 0),
+				new Hospital("St. Rose Dominican Hospitals- San Martin", 66.92934, 0),
+				new Hospital("French Hospital Medical Center", 73.4075, 0),
+				new Hospital("St. Bernardine Medical Center", 60.170834, 0),
+				new Hospital("St. Joseph's Medical Center", 67.034, 0),
+				new Hospital("St. John's Pleasant Valley Hospital", 61.38231, 0),
+				new Hospital("Saint Francis Memorial Hospital", 63.276, 0),
+				new Hospital("Mercy Medical Center Redding", 73.44714, 0),
+				new Hospital("Mark Twain St. Joseph's Hosptial", 70.187, 0),
+				new Hospital("Dominican Hospital Santa Cruz", 66.53, 0),
+				new Hospital("St. Joseph's Hospital and Medical Center", 66.708336, 0),
+				new Hospital("St. Mary's Medical Center San Francisco", 62.34087, 0),
+				new Hospital("St. Joseph's Behavioral Health Center", 60, 0),
+			]);
+			private var ac2:ArrayCollection = new ArrayCollection([
+				new Hospital("Hospital 0b", 0, 0),
+				new Hospital("Hospital 0a", 0, 0),
+				new Hospital("Hospital 10", 10, 0),
+				new Hospital("Hospital 20", 20, 0),
+				new Hospital("Hospital 30", 30, 0),
+				new Hospital("Hospital 40", 40, 0),
+				new Hospital("Hospital 50a", 50, 0),
+				new Hospital("Hospital 50b", 50, 0),
+				new Hospital("Hospital 60", 60, 0),
+				new Hospital("Hospital 70", 70, 0),
+				new Hospital("Hospital 80", 80, 0),
+				new Hospital("Hospital 90", 90, 0),
+				new Hospital("Hospital 100", 100, 0),
+				
+			]);
+			
+			private var ac3:ArrayCollection = new ArrayCollection([
+				new Hospital("Arroyo Grande Community Hospital", Math.random()*20 - 10 + 63.79909, 0),
+				new Hospital("Bakersfield Memorial Hospital", Math.random()*20 - 10 + 63.6892, 0),
+				new Hospital("Chandler Regional Medical Center", Math.random()*20 - 10 + 76.19029, 0),
+				new Hospital("Glendale Memorial Hospital and Health Center", Math.random()*20 - 10 + 63.537273, 0),
+				new Hospital("Marian Medical Center", Math.random()*20 - 10 + 66.764, 0),
+				new Hospital("Mercy General Hospital", Math.random()*20 - 10 + 58.15393, 0),
+				new Hospital("Mercy Hospitals Bakersfield", Math.random()*20 - 10 + 61.262608, 0),
+				new Hospital("Mercy San Juan Medical Center", Math.random()*20 - 10 + 70.427826, 0),
+				new Hospital("Mercy Gilbert Medical Center ", Math.random()*20 - 10 + 74.6887, 0),
+				new Hospital("Sequoia Hospital", Math.random()*20 - 10 + 69.07588, 0),
+				new Hospital("St. Elizabeth Community Hospital ", Math.random()*20 - 10 + 64.28889, 0),
+				new Hospital("Woodland Healthcare", Math.random()*20 - 10 + 69.08542, 0),
+				new Hospital("Methodist Hospital", Math.random()*20 - 10 + 52, 0),
+				new Hospital("Mercy Medical Center Merced", Math.random()*20 - 10 + 63.416668, 0),
+				new Hospital("Northridge Hospital Medical Center", Math.random()*20 - 10 + 64.39567, 0),
+				new Hospital("St Mary Medical Center Long Beach", Math.random()*20 - 10 + 56.608334, 0),
+				new Hospital("St. John's Regional Medical Center", Math.random()*20 - 10 + 50.469566, 0),
+				new Hospital("Mercy Mt. Shasta", Math.random()*20 - 10 + 82.926155, 0),
+				new Hospital("St. Mary's Regional Medical Center", Math.random()*20 - 10 + 54.765, 0),
+				new Hospital("Oak Valley Hospital", Math.random()*20 - 10 + 58.38875, 0),
+				new Hospital("Mercy Hospital Folsom", Math.random()*20 - 10 + 66.14571, 0),
+				new Hospital("Community Hospital of San Bernardino", Math.random()*20 - 10 + 66.08956, 0),
+				new Hospital("California Hospital Medical Center", Math.random()*20 - 10 + 56.59769, 0),
+				new Hospital("Sierra Nevada Memorial Hospital", Math.random()*20 - 10 + 66.86857, 0),
+				new Hospital("St. Rose Dominican Hospitals-Rose de Lima ", Math.random()*20 - 10 + 67.94867, 0),
+				new Hospital("St. Rose Dominican Hospitals-Siena", Math.random()*20 - 10 + 70.8815, 0),
+				new Hospital("St. Rose Dominican Hospitals- San Martin", Math.random()*20 - 10 + 66.92934, 0),
+				new Hospital("French Hospital Medical Center", Math.random()*20 - 10 + 73.4075, 0),
+				new Hospital("St. Bernardine Medical Center", Math.random()*20 - 10 + 60.170834, 0),
+				new Hospital("St. Joseph's Medical Center", Math.random()*20 - 10 + 67.034, 0),
+				new Hospital("St. John's Pleasant Valley Hospital", Math.random()*20 - 10 + 61.38231, 0),
+				new Hospital("Saint Francis Memorial Hospital", Math.random()*20 - 10 + 63.276, 0),
+				new Hospital("Mercy Medical Center Redding", Math.random()*20 - 10 + 73.44714, 0),
+				new Hospital("Mark Twain St. Joseph's Hosptial", Math.random()*20 - 10 + 70.187, 0),
+				new Hospital("Dominican Hospital Santa Cruz", Math.random()*20 - 10 + 66.53, 0),
+				new Hospital("St. Joseph's Hospital and Medical Center", Math.random()*20 - 10 + 66.708336, 0),
+				new Hospital("St. Mary's Medical Center San Francisco", Math.random()*20 - 10 + 62.34087, 0),
+				new Hospital("St. Joseph's Behavioral Health Center", Math.random()*20 - 10 + 60, 0),
+			]);
+			private var ac4:ArrayCollection = new ArrayCollection([
+				new Hospital("Hospital 0b", Math.random()*20 -  0 + 0, 0),
+				new Hospital("Hospital 0a", Math.random()*20 - 0 + 0, 0),
+				new Hospital("Hospital 10", Math.random()*20 - 10 + 10, 0),
+				new Hospital("Hospital 20", Math.random()*20 - 10 + 20, 0),
+				new Hospital("Hospital 30", Math.random()*20 - 10 + 30, 0),
+				new Hospital("Hospital 40", Math.random()*20 - 10 + 40, 0),
+				new Hospital("Hospital 50a", Math.random()*20 - 10 + 50, 0),
+				new Hospital("Hospital 50b", Math.random()*20 - 10 + 50, 0),
+				new Hospital("Hospital 60", Math.random()*20 - 10 + 60, 0),
+				new Hospital("Hospital 70", Math.random()*20 - 10 + 70, 0),
+				new Hospital("Hospital 80", Math.random()*20 - 10 + 80, 0),
+				new Hospital("Hospital 90", Math.random()*20 - 10 + 90, 0),
+				new Hospital("Hospital 100", Math.random()*20 - 20 + 100, 0),
+			]);			
+			
+			
+			
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				// Set titles
+				// Set Arraycollection of arraycollections
+				spikes.spikeTitles = ['Djamshed', 'Chris', 'Zach', 'Meghna Kukreja'];
+				var dp:ArrayCollection = new ArrayCollection([
+					ac1, ac2, ac3, ac4
+				]);
+				
+				//				spikes.spikeAppModel.singularItemName = 'chris';
+				//				spikes.spikeAppModel.pluralItemName = 'chrises';
+				spikes.dataProvider = dp;
+				spikes.update();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup gap="30" paddingLeft="20" paddingTop="20">
+		<s:HGroup gap="5">
+			<s:CheckBox id="downCb" label="Down" change="spikes.down=downCb.selected;spikes.update()"/>
+			<s:CheckBox id="relativeCb" label="Relative" change="spikes.relativeScale=relativeCb.selected;spikes.update()"/>
+			<s:Label text="rel"/>
+			<s:HSlider id="relativePct" minimum="0" maximum="100" value="50" change="spikes.relativeBaselinePercentile = relativePct.value / 100; spikes.update()"/>
+			<s:Label text="abs"/>
+			<s:HSlider id="absolutePct" minimum="0" maximum="100" value="50" change="spikes.absoluteBaseline = absolutePct.value; spikes.update()"/>
+			<controls:SpikeSearchTextInput/>
+		</s:HGroup>
+		
+		<s:HGroup gap="5">
+			<s:Label text="Selected hospital is: {spikes.spikeAppModel.selectedHospitalName}"/>
+			<s:Button label="Set selected hospital to Mercy Mt. Shasta" click="spikes.spikeAppModel.selectedHospitalName = 'Mercy Mt. Shasta'"/>
+		</s:HGroup>
+		
+		<s:Label text="{spikes.lineDescription}"/>
+		<views:MultiSpikeView id="spikes"/>
+	</s:VGroup>
+</s:Application>

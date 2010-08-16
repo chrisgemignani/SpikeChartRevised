@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" click="itemrenderer1_clickHandler(event)"
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				autoDrawBackground="false">
+	
+	<fx:Script>
+		<![CDATA[
+			import spike.models.SpikeAppModel;
+			[Bindable] public var appModel:SpikeAppModel = SpikeAppModel.instance;
+			
+			import org.juicekit.util.Strings;
+			
+			[Bindable]
+			private var rnd:Number = Math.random();
+						
+			protected function itemrenderer1_clickHandler(event:MouseEvent):void
+			{
+				appModel.selectedHospitalName = data.hospitalName;
+			}
+
+		]]>
+	</fx:Script>
+	
+	
+	<fx:Declarations>		
+		<s:SolidColor id="normalColor" color="{data.hospitalName == appModel.selectedHospitalName ? 0x9BCDE4 : 0x666666}"/>
+		<s:SolidColor id="hoveredColor" color="0x9BCDE4"/>
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="hovered"/>
+		<s:State name="selected"/>
+	</s:states>
+	
+	<s:Rect height="100%" width="100%">
+		<s:fill>
+			<s:SolidColor color="0xeeeeee" alpha="0.9"/>
+		</s:fill>
+	</s:Rect>
+		
+	<s:HGroup gap="2" horizontalAlign="center" height="10" maxHeight="10" width="200">
+		<mx:Spacer width="18"/>
+		<s:Label id="lbl" width="150" maxDisplayedLines="1"  styleName="jkNotes" text="{data.hospitalName}" color="{normalColor.color}" color.hovered="{hoveredColor.color}"/>
+		<mx:Spacer width="2"/>
+		<s:Label id="detail" textAlign="right" width="30" styleName="jkNotes" text="{Strings.format('{0:0.0}',data.score)}" color="{normalColor.color}" color.hovered="{hoveredColor.color}" visible="true" visible.hovered="true"/>
+	</s:HGroup>
+	
+</s:ItemRenderer>
+
