@@ -45,6 +45,7 @@
 				hospitalName = hospitalGroup.toString();
 				hospitalGroup.hospitals.addEventListener(CollectionEvent.COLLECTION_CHANGE, function():void {
 					hospitalName = hospitalGroup.toString();
+					getColor(appModel.selectedHospitalName, appModel.hoverHospitalName, appModel.searchHospitalName);
 				}, false, 0, true);
 				// calculate initial coloring
 				getColor(appModel.selectedHospitalName, appModel.hoverHospitalName, appModel.searchHospitalName);

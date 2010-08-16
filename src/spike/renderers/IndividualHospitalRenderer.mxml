@@ -38,7 +38,11 @@
 			[Bindable] protected var clrFill:SolidColor = new SolidColor(0x666666, 1);
 			
 			override public function set data(v:Object):void {
-				hospital = v as Hospital;
+				if (v) {
+					hospital = v as Hospital;
+				} else {
+					hospital = new Hospital('###Unknown###', 0, 0);
+				}
 				hospitalNameLowerCase = hospital.hospitalName.toLowerCase();
 				
 				// calculate initial coloring
